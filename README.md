@@ -98,6 +98,7 @@ You may be using [drawio](https://www.drawio.com/) to open the file. Otherwise y
 2. Use **KeyboardInterrupt** (usually Control+C or Delete) inside your Terminal.
 
 ## Strategy Backtest
+### Python backtest
 
 The Strategy Backtest script could be found in `backtest` folder of root directory:
 
@@ -112,3 +113,9 @@ The Strategy Backtest script could be found in `backtest` folder of root directo
 4. The output will be saved under `crypto_hedge_scalping_bot/backtest/cleaned_data`.
 
 5. Run the `crypto_hedge_scalping_bot/backtest/prepare_data.ipynb` to evaluate the historical strategy performance.
+
+### Pine Script (TradingView) backtest
+
+For quick strategy performance check via TradingView find the Pine Script source at `crypto_hedge_scalping_bot/backtest/pinescript`.
+
+Script is also available on [TradingView](https://www.tradingview.com/script/qm706qI3-hedge-scalp/)

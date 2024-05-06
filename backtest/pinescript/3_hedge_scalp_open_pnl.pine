@@ -1,0 +1,197 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © Trade_ND
+
+//@version=5
+indicator('Hedge Scalp - Open Profit/Loss', shorttitle='Hedge Scalp - Open Profit/Loss', overlay=false)
+
+// Inputs
+ema_lenght = input(defval=2, title= "EMA Lenght", tooltip = "Lenght of Initial Grid", group = "EMA Settings:")
+
+grid_1_long_inp = input.float(defval=0.5, title= "1 Grid (in %)", tooltip = "The input for 1st Long grid in %", group = "Grid Settings:")
+grid_2_long_inp = input.float(defval=1, title= "2 Grid (in %)", tooltip = "The input for 2nd Long grid in %", group = "Grid Settings:")
+grid_3_long_inp = input.float(defval=1.5, title= "3 Grid (in %)", tooltip = "The input for 3rd Long grid in %", group = "Grid Settings:")
+grid_4_long_inp = input.float(defval=2, title= "4 Grid (in %)", tooltip = "The input for 4th Long grid in %", group = "Grid Settings:")
+grid_5_short_inp = input.float(defval=2.5, title='5 Grid hedged (in %)', tooltip = "The input for 5th Hedged Short grid in %", group = "Grid Settings:")
+long_tp_inp = input.float(defval=0.5, title='Long Take Profit (in %)', tooltip = "Take Profit is cacluclated from Average Entry Price", group = "Stop Loss and Take Profit Settings:")
+short_tp_inp = input.float(defval=1.6, title='Short Take Profit (in %)', tooltip = "Take Profit is cacluclated from Average Entry Price", group = "Stop Loss and Take Profit Settings:")
+
+deposit = input.int(1000, title = 'Strategy Deposit (USDT)', tooltip = "The input for Strategy Deposit", group = "Equity for etries:")
+comission = input.float(0.04, title = "Comission (%)", tooltip = "The input for Comission, already in %", group = "Equity for etries:")
+n1 = input.float(2.17, title = 'Long Entry 1 - Equity in % from total', tooltip = "The input for amount equty for 1st grid for Long", group = "Equity for etries:")
+n2 = input.float(4.35, title = 'Long Entry 2 - Equity in % from total', tooltip = "The input for amount equty for 2nd grid for Long", group = "Equity for etries:")
+n3 = input.float(8.7, title = 'Long Entry 3 - Equity in % from total', tooltip = "The input for amount equty for 3rd grid for Long", group = "Equity for etries:")
+n4 = input.float(18.2, title = 'Long Entry 4 - Equity in % from total', tooltip = "The input for amount equty for 4th grid for Long", group = "Equity for etries:")
+n5 = input.float(66.67, title = 'Short Entry 5 - Equity in % from total', tooltip = "The input for amount equty for 5th grid for Short", group = "Equity for etries:")
+
+StartDate = input.time(timestamp("1 Jan 2024 00:00"), title="Start Date", group = "Backtest:")
+EndDate = input.time(timestamp("1 Jan 2099 01:00"), title="End Date", group = "Backtest:")
+
+// Calculations
+ema=ta.ema(close,ema_lenght)
+
+grid_long_1 = ema-ema*(grid_1_long_inp/100)
+grid_long_2 = ema-ema*(grid_2_long_inp/100)
+grid_long_3 = ema-ema*(grid_3_long_inp/100)
+grid_long_4 = ema-ema*(grid_4_long_inp/100)
+grid_short_5 = ema-ema*(grid_5_short_inp/100)
+
+// Backtesting range
+time_cond = time >= StartDate and time <= EndDate
+
+// Indicator logic
+var grid_1_long_taken = false
+var grid_2_long_taken = false
+var grid_3_long_taken = false
+var grid_4_long_taken = false
+var grid_5_short_taken = false
+var long_tp_taken = false
+var short_tp_taken = false
+
+var price_gird_1 = 0.0
+var price_gird_2 = 0.0
+var price_gird_3 = 0.0
+var price_gird_4 = 0.0
+var price_gird_5 = 0.0
+var price_tp_long = 0.0
+var price_tp_short = 0.0
+
+var qty_long_1 = 0.0
+var qty_long_2 = 0.0
+var qty_long_3 = 0.0
+var qty_long_4 = 0.0
+var qty_short_5 = 0.0
+var qty_long_sum = 0.0
+var qty_short_sum = 0.0
+
+var avg_price_long = 0.0
+var avg_price_short = 0.0
+var n_long = 0
+var n_short = 0
+
+var profit = 0.0
+var profit_sum = 0.0
+
+// 1st long grid logic
+if not grid_1_long_taken and time_cond and (low<grid_long_1)
+    price_gird_1 := grid_long_1[1]
+    price_gird_2 := grid_long_2[1]
+    price_gird_3 := grid_long_3[1]
+    price_gird_4 := grid_long_4[1]
+    price_gird_5 := grid_short_5[1]
+
+    n_long := n_long + 1
+    qty_long_1 := (deposit*n1/100/price_gird_1)
+    qty_long_sum := qty_long_sum + qty_long_1
+
+    avg_price_long := (price_gird_1*qty_long_1)/qty_long_sum
+    price_tp_long := avg_price_long+(avg_price_long*long_tp_inp/100)
+
+    grid_1_long_taken := true
+
+// 2nd long grid logic
+if grid_1_long_taken and not grid_2_long_taken and time_cond and (low<price_gird_2)
+    n_long := n_long + 1
+    qty_long_2 := (deposit*n2/100/price_gird_2)
+    qty_long_sum := qty_long_sum + qty_long_2
+
+    avg_price_long := ((price_gird_1*qty_long_1)+(price_gird_2*qty_long_2))/qty_long_sum
+    price_tp_long := avg_price_long+(avg_price_long*long_tp_inp/100)
+
+    grid_2_long_taken := true
+
+// 3rd long grid logic
+if grid_2_long_taken and not grid_3_long_taken and time_cond and (low<price_gird_3)
+    n_long := n_long + 1
+    qty_long_3 := (deposit*n3/100/price_gird_3)
+    qty_long_sum := qty_long_sum + qty_long_3
+
+    avg_price_long := ((price_gird_1*qty_long_1)+(price_gird_2*qty_long_2)+(price_gird_3*qty_long_3))/qty_long_sum
+    price_tp_long := avg_price_long+(avg_price_long*long_tp_inp/100)
+
+    grid_3_long_taken := true
+
+// 4th long grid logic
+if grid_3_long_taken and not grid_4_long_taken and time_cond and (low<price_gird_4)
+    n_long := n_long + 1
+    qty_long_4 := (deposit*n4/100/price_gird_4)
+    qty_long_sum := qty_long_sum + qty_long_4
+
+    avg_price_long := ((price_gird_1*qty_long_1)+(price_gird_2*qty_long_2)+(price_gird_3*qty_long_3)+(price_gird_4*qty_long_4))/qty_long_sum
+    price_tp_long := avg_price_long+(avg_price_long*long_tp_inp/100)
+
+    grid_4_long_taken := true
+
+// 5th short grid logic
+if grid_4_long_taken and not grid_5_short_taken and time_cond and (low<price_gird_5)
+    n_short := n_short + 1
+    qty_short_5 := (deposit*n5/100/price_gird_5)
+    qty_short_sum := qty_short_sum + qty_short_5
+
+    avg_price_short := (price_gird_5*qty_short_5)/qty_short_sum
+    price_tp_short := avg_price_short-(avg_price_short*short_tp_inp/100)
+    grid_5_short_taken := true
+
+// calculate profit
+if qty_long_sum > 0 and qty_short_sum > 0 // Calculation for longs and shorts
+    profit := math.round((close - avg_price_long)*qty_long_sum + (avg_price_short-close)*qty_short_sum - (avg_price_long*qty_long_sum + avg_price_short*qty_short_sum)*comission*0.01, 2)
+
+if qty_long_sum > 0 and qty_short_sum == 0 // Calculation for longs only (if we have only longs)
+    profit := math.round((close - avg_price_long)*qty_long_sum + avg_price_long*qty_long_sum*comission*0.01,2)
+
+if qty_long_sum == 0 and qty_short_sum > 0 // Calculation for short only (if we have only shorts)
+    profit := math.round((avg_price_short - close)*qty_short_sum - avg_price_short*qty_short_sum*comission*0.01,2)
+
+// take profit and counters rest
+if grid_1_long_taken and not long_tp_taken and not short_tp_taken and time_cond and (low<price_tp_short or high>price_tp_long)
+    grid_1_long_taken := false
+    grid_2_long_taken := false
+    grid_3_long_taken := false
+    grid_4_long_taken := false
+    grid_5_short_taken := false
+    long_tp_taken := false
+    short_tp_taken := false
+
+    price_gird_1 := 0.0
+    price_gird_1
+    price_gird_2 := 0.0
+    price_gird_2
+    price_gird_3 := 0.0
+    price_gird_3
+    price_gird_4 := 0.0
+    price_gird_4
+    price_gird_5 := 0.0
+    price_gird_5
+    price_tp_long := 0.0
+    price_tp_long
+    price_tp_short := 0.0
+    price_tp_short
+
+    qty_long_1 := 0.0
+    qty_long_1
+    qty_long_2 := 0.0
+    qty_long_2
+    qty_long_3 := 0.0
+    qty_long_3
+    qty_long_4 := 0.0
+    qty_long_4
+    qty_short_5 := 0.0
+    qty_short_5
+    qty_long_sum := 0.0
+    qty_long_sum
+    qty_short_sum := 0.0
+    qty_short_sum
+
+    avg_price_long := 0.0
+    avg_price_long
+    avg_price_short := 0.0
+    avg_price_short
+    n_long := 0
+    n_long
+    n_short := 0
+    n_short
+
+    profit_sum := profit_sum + profit
+
+// Plots
+plot(profit, title = 'Open Profit/Loss', color = color.white)
+plot(0, title = 'Baseline', color = color.black)
