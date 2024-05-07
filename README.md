@@ -118,4 +118,4 @@ The Strategy Backtest script could be found in `backtest` folder of root directo
 
 For quick strategy performance check via TradingView find the Pine Script source at `crypto_hedge_scalping_bot/backtest/pinescript`.
 
-Script is also available on [TradingView](https://www.tradingview.com/script/qm706qI3-hedge-scalp/)
+Script is also available on [TradingView](https://tradingview.com/script/KnHofBm1-hedge-scalp/)
